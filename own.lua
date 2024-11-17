@@ -43,6 +43,8 @@ owlLibGui.Name = httpService:GenerateGUID(false)
 -- Prevent UI from resetting on respawn
 if owlLibGui:IsA("ScreenGui") then
     owlLibGui.ResetOnSpawn = false
+else
+    warn("owlLibGui is not a ScreenGui; ResetOnSpawn is not applicable.")
 end
 
 local mainFrame = owlLibGui.mainFrame
