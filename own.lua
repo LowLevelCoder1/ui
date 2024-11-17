@@ -87,6 +87,23 @@ inputService.InputChanged:Connect(function(input)
     end
 end)
 
+-- Animations for Open/Close and Minimize
+local minimized = false
+mainFrame.topBarFrame.miniBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        mainFrame:TweenSize(UDim2.new(0, 400, 0, 30), "Out", "Quad", 0.3, true)
+    else
+        mainFrame:TweenSize(UDim2.new(0, 400, 0, 300), "Out", "Quad", 0.3, true)
+    end
+end)
+
+mainFrame.topBarFrame.exitBtn.MouseButton1Click:Connect(function()
+    mainFrame:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.5, true)
+    wait(0.5)
+    owlLibGui:Destroy()
+end)
+
 -- Keybind toggling
 local toggleKey = Enum.KeyCode.P
 function OwlLib:SetToggleKey(key)
@@ -97,11 +114,6 @@ inputService.InputBegan:Connect(function(input, onGui)
     if not onGui and input.KeyCode == toggleKey then
         owlLibGui.Enabled = not owlLibGui.Enabled
     end
-end)
-
--- Close Button Functionality
-mainFrame.topBarFrame.exitBtn.MouseButton1Click:Connect(function()
-    owlLibGui:Destroy()
 end)
 
 -- Universal UI Components
@@ -141,6 +153,7 @@ function OwlLib.Content:initBtnEffect(btn)
     end)
 end
 
+-- Tab Button
 function OwlLib:new(title)
     local self = setmetatable({}, {__index = self.Content})
 
@@ -172,166 +185,3 @@ function OwlLib:new(title)
 
     return self
 end
-
-function OwlLib.Content:newButton(title, callback)
-    self:Resize(self.bodyFrame)
-    local btn = game:GetObjects(assets.ToggleButton)[1]
-    btn.Parent = self.bodyFrame
-    btn.titleLabel.Text = title
-
-    btn.MouseButton1Click:Connect(function()
-        self:Ripple(btn)
-        callback()
-    end)
-
-    self:initBtnEffect(btn)
-    return btn
-end
-
-function OwlLib.Content:newSlider(title, callback, min, max, start)
-    self:Resize(self.bodyFrame)
-    local slider = game:GetObjects(assets.Slider)[1]
-    slider.Parent = self.bodyFrame
-    slider.titleLabel.Text = title
-
-    -- Slider functionality
-    local dragging = false
-    slider.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-        end
-    end)
-
-    slider.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-            callback(slider.valueLabel.Text)
-        end
-    end)
-
-    return slider
-end
-
-function OwlLib.Content:newDropdown(title, callback, list, noCallbackOnStart)
-    self:Resize(self.bodyFrame)
-    local dropdown = game:GetObjects(assets.Dropdown)[1]
-    dropdown.Parent = self.bodyFrame
-    dropdown.titleLabel.Text = title
-
-    local arrowLabel = dropdown.arrowLabel
-    local bodyFrame = dropdown.bodyFrame
-
-    local function refresh(list)
-        for _, v in ipairs(bodyFrame:GetChildren()) do
-            if not v:IsA("UIListLayout") then
-                v:Destroy()
-            end
-        end
-        for _, item in ipairs(list) do
-            local btn = game:GetObjects(assets.DropdownItem)[1]
-            btn.Parent = bodyFrame
-            btn.Text = item
-            btn.MouseButton1Click:Connect(function()
-                callback(item)
-                bodyFrame.Visible = false
-                dropdown.bodyFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-                arrowLabel.Rotation = 0
-            end)
-        end
-    end
-
-    refresh(list)
-
-    dropdown.MouseButton1Click:Connect(function()
-        bodyFrame.Visible = not bodyFrame.Visible
-        arrowLabel.Rotation = bodyFrame.Visible and 180 or 0
-    end)
-
-    return {
-        Refresh = function(_, newList)
-            refresh(newList)
-        end
-    }
-end
-
-function OwlLib.Content:newTextbox(title, callback, presetText, noCallbackOnStart)
-    self:Resize(self.bodyFrame)
-    local textbox = game:GetObjects(assets.Textbox)[1]
-    textbox.Parent = self.bodyFrame
-    textbox.titleLabel.Text = title
-    textbox.inputBox.Text = presetText or ""
-
-    if not noCallbackOnStart and presetText then
-        callback(presetText)
-    end
-
-    textbox.inputBox.FocusLost:Connect(function()
-        callback(textbox.inputBox.Text)
-    end)
-
-    return textbox
-end
-
-function OwlLib.Content:newKeybind(title, callback, presetKey)
-    self:Resize(self.bodyFrame)
-    local keybind = game:GetObjects(assets.KeyBind)[1]
-    keybind.Parent = self.bodyFrame
-    keybind.titleLabel.Text = title
-    keybind.bindBtn.Text = presetKey and presetKey.Name or "None"
-
-    local listening = false
-    local boundKey = presetKey
-
-    keybind.bindBtn.MouseButton1Click:Connect(function()
-        keybind.bindBtn.Text = "..."
-        listening = true
-    end)
-
-    inputService.InputBegan:Connect(function(input)
-        if listening then
-            boundKey = input.KeyCode
-            keybind.bindBtn.Text = input.KeyCode.Name
-            callback(boundKey)
-            listening = false
-        elseif input.KeyCode == boundKey then
-            callback()
-        end
-    end)
-
-    return keybind
-end
-
-function OwlLib.Content:newColorPicker(title, callback, presetColor)
-    self:Resize(self.bodyFrame)
-    local colorPicker = game:GetObjects(assets.ColorPicker)[1]
-    colorPicker.Parent = self.bodyFrame
-    colorPicker.titleLabel.Text = title
-
-    local colorFrame = colorPicker.colorFrame
-    colorFrame.BackgroundColor3 = presetColor or Color3.fromRGB(255, 255, 255)
-
-    local rainbowMode = false
-    local function updateColor(color)
-        if not rainbowMode then
-            colorFrame.BackgroundColor3 = color
-            callback(color)
-        end
-    end
-
-    colorPicker.colorFrame.MouseButton1Click:Connect(function()
-        rainbowMode = not rainbowMode
-        if rainbowMode then
-            while rainbowMode do
-                for hue = 0, 1, 0.01 do
-                    updateColor(Color3.fromHSV(hue, 1, 1))
-                    wait(0.05)
-                end
-            end
-        end
-    end)
-
-    return colorPicker
-end
-
-
-return OwlLib
