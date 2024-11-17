@@ -39,6 +39,12 @@ end
 local owlLibGui = game:GetObjects(assets.OwlLibGui)[1]
 owlLibGui.Parent = parentGui
 owlLibGui.Name = httpService:GenerateGUID(false)
+
+-- Prevent UI from resetting on respawn
+if owlLibGui:IsA("ScreenGui") then
+    owlLibGui.ResetOnSpawn = false
+end
+
 local mainFrame = owlLibGui.mainFrame
 local tabsFrame = mainFrame.tabsFrame
 local minimized = false -- State for minimize animation
@@ -54,9 +60,6 @@ local function toggleVisibility(frame, visible)
         frame.Visible = false
     end
 end
-
--- Prevent UI Destruction on Spawn
-mainFrame.ResetOnSpawn = false
 
 -- Minimize/Expand Functionality
 mainFrame.topBarFrame.miniBtn.MouseButton1Click:Connect(function()
@@ -139,13 +142,29 @@ function OwlLib:newTab(title)
     return self
 end
 
+-- Create Buttons
+function OwlLib.Content:newButton(title, callback)
+    local btn = game:GetObjects(assets.ToggleButton)[1]
+    btn.Parent = self.bodyFrame
+    btn.titleLabel.Text = title
+    btn.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 40) -- Spacing between elements
+
+    local enabled = false
+    btn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        btn.statusFrame.BackgroundColor3 = enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
+        callback(enabled)
+    end)
+
+    return btn
+end
+
 -- Create Sliders
 function OwlLib.Content:newSlider(title, callback, min, max, defaultValue)
     local slider = game:GetObjects(assets.Slider)[1]
-    assert(slider.sliderFrame, "SliderFrame is missing from slider object.")
-    
     slider.Parent = self.bodyFrame
     slider.titleLabel.Text = title
+    slider.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 40) -- Spacing between elements
 
     local dragging = false
     local sliderValue = defaultValue or min
@@ -178,5 +197,25 @@ function OwlLib.Content:newSlider(title, callback, min, max, defaultValue)
 
     return slider
 end
+
+-- Example Usage
+local mainTab = OwlLib:newTab("MAIN")
+mainTab:newButton("Aimbot", function(enabled)
+    print("Aimbot toggled:", enabled)
+end)
+mainTab:newButton("Wallbang", function(enabled)
+    print("Wallbang toggled:", enabled)
+end)
+mainTab:newSlider("Smoothness", function(value)
+    print("Smoothness set to:", value)
+end, 1, 10, 5)
+
+local visualsTab = OwlLib:newTab("VISUALS")
+visualsTab:newButton("ESP", function(enabled)
+    print("ESP toggled:", enabled)
+end)
+visualsTab:newButton("Chams", function(enabled)
+    print("Chams toggled:", enabled)
+end)
 
 return OwlLib
