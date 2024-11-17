@@ -41,6 +41,35 @@ owlLibGui.Parent = parentGui
 owlLibGui.Name = httpService:GenerateGUID(false)
 local mainFrame = owlLibGui.mainFrame
 local tabsFrame = mainFrame.tabsFrame
+local minimized = false -- State for minimize animation
+
+-- Animations for open/close
+local function toggleVisibility(frame, visible)
+    if visible then
+        frame:TweenSize(UDim2.new(0, 400, 0, 300), "Out", "Quad", 0.3, true) -- Expand
+    else
+        frame:TweenSize(UDim2.new(0, 400, 0, 0), "Out", "Quad", 0.3, true) -- Collapse
+        wait(0.3)
+        frame.Visible = false
+    end
+end
+
+-- Minimize/Expand Functionality
+mainFrame.topBarFrame.miniBtn.MouseButton1Click:Connect(function()
+    if not minimized then
+        mainFrame:TweenSize(UDim2.new(0, 400, 0, 30), "Out", "Quad", 0.3, true)
+    else
+        mainFrame:TweenSize(UDim2.new(0, 400, 0, 300), "Out", "Quad", 0.3, true)
+    end
+    minimized = not minimized
+end)
+
+-- Close Button Functionality
+mainFrame.topBarFrame.exitBtn.MouseButton1Click:Connect(function()
+    toggleVisibility(mainFrame, false)
+    wait(0.3)
+    owlLibGui:Destroy()
+end)
 
 -- Draggable UI functionality
 local dragging = false
@@ -111,6 +140,7 @@ function OwlLib.Content:newButton(title, callback)
     local btn = game:GetObjects(assets.ToggleButton)[1]
     btn.Parent = self.bodyFrame
     btn.titleLabel.Text = title
+    btn.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 40) -- Spacing between elements
 
     local enabled = false
     btn.MouseButton1Click:Connect(function()
@@ -127,6 +157,7 @@ function OwlLib.Content:newSlider(title, callback, min, max, defaultValue)
     local slider = game:GetObjects(assets.Slider)[1]
     slider.Parent = self.bodyFrame
     slider.titleLabel.Text = title
+    slider.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 40) -- Spacing between elements
 
     local dragging = false
     local sliderValue = defaultValue or min
@@ -162,8 +193,8 @@ end
 
 -- Example Usage
 local mainTab = OwlLib:newTab("MAIN")
-mainTab:newButton("Silent Aim", function(enabled)
-    print("Silent Aim toggled:", enabled)
+mainTab:newButton("Aimbot", function(enabled)
+    print("Aimbot toggled:", enabled)
 end)
 mainTab:newButton("Wallbang", function(enabled)
     print("Wallbang toggled:", enabled)
