@@ -87,7 +87,7 @@ inputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Animations for Open/Close and Minimize
+-- GUI Animations
 local minimized = false
 mainFrame.topBarFrame.miniBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
@@ -116,11 +116,7 @@ inputService.InputBegan:Connect(function(input, onGui)
     end
 end)
 
--- Universal UI Components
-function OwlLib.Content:Resize(scrollingFrame)
-    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, (#scrollingFrame:GetChildren() - 1) * 36)
-end
-
+-- Ripple and Hover Effects
 function OwlLib.Content:Ripple(btn)
     spawn(function()
         local ripple = Instance.new("ImageLabel", btn)
@@ -153,17 +149,15 @@ function OwlLib.Content:initBtnEffect(btn)
     end)
 end
 
--- Tab Button
+-- Add Buttons to Tabs
 function OwlLib:new(title)
     local self = setmetatable({}, {__index = self.Content})
 
-    -- Create a body frame for the new category
     self.bodyFrame = game:GetObjects(assets.BodyFrame)[1]
     self.bodyFrame.Parent = mainFrame
     self.bodyFrame.Name = title .. "BodyFrame"
     self.bodyFrame.Visible = false
 
-    -- Create a tab button for the new category
     local tabBtn = game:GetObjects(assets.TabButton)[1]
     tabBtn.Parent = mainFrame.tabsFrame
     tabBtn.tabLabel.Text = title
@@ -184,4 +178,19 @@ function OwlLib:new(title)
     end)
 
     return self
+end
+
+function OwlLib.Content:newButton(title, callback)
+    self:Resize(self.bodyFrame)
+    local btn = game:GetObjects(assets.ToggleButton)[1]
+    btn.Parent = self.bodyFrame
+    btn.titleLabel.Text = title
+
+    btn.MouseButton1Click:Connect(function()
+        self:Ripple(btn)
+        callback()
+    end)
+
+    self:initBtnEffect(btn)
+    return btn
 end
