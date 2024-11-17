@@ -96,6 +96,13 @@ function OwlLib:newTab(title)
         tabBtn.ImageColor3 = Color3.fromRGB(30, 30, 30)
     end)
 
+    -- Default to the first tab as active
+    if not activeTab then
+        activeTab = self
+        self.bodyFrame.Visible = true
+        tabBtn.ImageColor3 = Color3.fromRGB(30, 30, 30)
+    end
+
     return self
 end
 
