@@ -141,7 +141,7 @@ function OwlLib.Content:newButton(title, callback)
     local btn = game:GetObjects(assets.ToggleButton)[1]
     btn.Parent = self.bodyFrame
     btn.titleLabel.Text = title
-    btn.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 50) -- Fix spacing
+    btn.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 60) -- Increased spacing to 60 pixels
 
     local enabled = false
     btn.MouseButton1Click:Connect(function()
@@ -158,7 +158,7 @@ function OwlLib.Content:newSlider(title, callback, min, max, defaultValue)
     local slider = game:GetObjects(assets.Slider)[1]
     slider.Parent = self.bodyFrame
     slider.titleLabel.Text = title
-    slider.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 50) -- Fix spacing
+    slider.Position = UDim2.new(0, 10, 0, (#self.bodyFrame:GetChildren() - 1) * 60) -- Increased spacing to 60 pixels
 
     local dragging = false
     local sliderValue = defaultValue or min
