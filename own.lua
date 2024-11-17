@@ -46,6 +46,7 @@ local minimized = false -- State for minimize animation
 -- Animations for open/close
 local function toggleVisibility(frame, visible)
     if visible then
+        frame.Visible = true
         frame:TweenSize(UDim2.new(0, 400, 0, 300), "Out", "Quad", 0.3, true) -- Expand
     else
         frame:TweenSize(UDim2.new(0, 400, 0, 0), "Out", "Quad", 0.3, true) -- Collapse
@@ -206,6 +207,9 @@ end, 1, 10, 5)
 local visualsTab = OwlLib:newTab("VISUALS")
 visualsTab:newButton("ESP", function(enabled)
     print("ESP toggled:", enabled)
+end)
+visualsTab:newButton("Chams", function(enabled)
+    print("Chams toggled:", enabled)
 end)
 
 return OwlLib
