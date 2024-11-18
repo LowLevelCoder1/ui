@@ -1,302 +1,279 @@
 local UILibrary = {}
+
+-- Main theme configuration
 UILibrary.Theme = {
-    BackgroundColor = Color3.fromRGB(30, 30, 30),
+    BackgroundColor = Color3.fromRGB(25, 25, 25),
+    TabBackgroundColor = Color3.fromRGB(30, 30, 30),
+    AccentColor = Color3.fromRGB(0, 120, 255),
     TextColor = Color3.fromRGB(255, 255, 255),
-    AccentColor = Color3.fromRGB(85, 170, 255),
-    ButtonColor = Color3.fromRGB(50, 50, 50),
-    HoverColor = Color3.fromRGB(70, 70, 70)
+    ButtonColor = Color3.fromRGB(40, 40, 40),
+    HoverColor = Color3.fromRGB(50, 50, 50),
 }
 
-UILibrary.Registry = {}
-UILibrary.Windows = {}
-
--- Utility functions
-local function AddToRegistry(object, properties)
-    table.insert(UILibrary.Registry, {Object = object, Properties = properties})
-end
-
-local function UpdateColors()
-    for _, entry in ipairs(UILibrary.Registry) do
-        for prop, color in pairs(entry.Properties) do
-            entry.Object[prop] = UILibrary.Theme[color]
-        end
-    end
-end
-
--- Draggable functionality
-local function MakeDraggable(frame, dragHandle)
-    local dragging = false
-    local dragInput, startPos, startOffset
-
-    dragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            startPos = input.Position
-            startOffset = frame.Position
-        end
-    end)
-
-    dragHandle.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - startPos
-            frame.Position = UDim2.new(startOffset.X.Scale, startOffset.X.Offset + delta.X, startOffset.Y.Scale, startOffset.Y.Offset + delta.Y)
-        end
-    end)
-
-    dragHandle.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-end
-
--- Create a new window
+-- Function to create a new UI window
 function UILibrary:CreateWindow(title)
-    local gui = Instance.new("ScreenGui", game.CoreGui)
-    gui.Name = "UILibrary"
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    local WindowFrame = Instance.new("Frame")
+    WindowFrame.Size = UDim2.new(0.4, 0, 0.5, 0)
+    WindowFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
+    WindowFrame.BackgroundColor3 = self.Theme.BackgroundColor
+    WindowFrame.BorderSizePixel = 0
+    WindowFrame.Parent = ScreenGui
 
-    local window = Instance.new("Frame", gui)
-    window.Size = UDim2.new(0.3, 0, 0.5, 0)
-    window.Position = UDim2.new(0.35, 0, 0.25, 0)
-    window.BackgroundColor3 = self.Theme.BackgroundColor
-    window.BorderSizePixel = 0
+    local TitleBar = Instance.new("TextLabel")
+    TitleBar.Size = UDim2.new(1, 0, 0.1, 0)
+    TitleBar.BackgroundColor3 = self.Theme.AccentColor
+    TitleBar.TextColor3 = self.Theme.TextColor
+    TitleBar.Font = Enum.Font.SourceSansBold
+    TitleBar.TextScaled = true
+    TitleBar.Text = title or "My Custom UI"
+    TitleBar.Parent = WindowFrame
 
-    local titleBar = Instance.new("TextLabel", window)
-    titleBar.Size = UDim2.new(1, 0, 0.1, 0)
-    titleBar.BackgroundColor3 = self.Theme.AccentColor
-    titleBar.Text = title
-    titleBar.Font = Enum.Font.SourceSansBold
-    titleBar.TextColor3 = self.Theme.TextColor
-    titleBar.TextSize = 18
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Size = UDim2.new(1, 0, 0.9, 0)
+    TabContainer.Position = UDim2.new(0, 0, 0.1, 0)
+    TabContainer.BackgroundColor3 = self.Theme.TabBackgroundColor
+    TabContainer.BorderSizePixel = 0
+    TabContainer.Parent = WindowFrame
 
-    MakeDraggable(window, titleBar)
-
-    self.Windows[title] = {Window = window, Tabs = {}}
-    AddToRegistry(window, {BackgroundColor3 = "BackgroundColor"})
-    AddToRegistry(titleBar, {BackgroundColor3 = "AccentColor", TextColor3 = "TextColor"})
-    return self.Windows[title]
+    return {
+        Window = WindowFrame,
+        TitleBar = TitleBar,
+        TabContainer = TabContainer,
+        Tabs = {},
+    }
 end
 
--- Add a tab
-function UILibrary:AddTab(windowTitle, tabName)
-    local window = self.Windows[windowTitle].Window
-    local tab = Instance.new("Frame", window)
-    tab.Size = UDim2.new(1, 0, 0.9, 0)
-    tab.Position = UDim2.new(0, 0, 0.1, 0)
-    tab.BackgroundTransparency = 1
-    tab.Visible = #self.Windows[windowTitle].Tabs == 0 -- Show the first tab by default
-    self.Windows[windowTitle].Tabs[tabName] = tab
+function UILibrary:AddTab(window, tabName)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Text = tabName
+    TabButton.Size = UDim2.new(0.2, 0, 0.1, 0)
+    TabButton.Position = UDim2.new(#window.Tabs * 0.2, 0, 0, 0)
+    TabButton.BackgroundColor3 = self.Theme.ButtonColor
+    TabButton.TextColor3 = self.Theme.TextColor
+    TabButton.Font = Enum.Font.SourceSansBold
+    TabButton.Parent = window.TabContainer
 
-    local tabButton = Instance.new("TextButton", window)
-    tabButton.Size = UDim2.new(0.2, 0, 0.1, 0)
-    tabButton.Position = UDim2.new((#self.Windows[windowTitle].Tabs - 1) * 0.2, 0, 0, 0)
-    tabButton.BackgroundColor3 = self.Theme.ButtonColor
-    tabButton.TextColor3 = self.Theme.TextColor
-    tabButton.Font = Enum.Font.SourceSans
-    tabButton.Text = tabName
-    tabButton.TextSize = 16
+    local TabContent = Instance.new("Frame")
+    TabContent.Size = UDim2.new(1, 0, 0.9, 0)
+    TabContent.Position = UDim2.new(0, 0, 0.1, 0)
+    TabContent.BackgroundTransparency = 1
+    TabContent.Visible = #window.Tabs == 0 -- Show the first tab by default
+    TabContent.Parent = window.TabContainer
 
-    tabButton.MouseButton1Click:Connect(function()
-        for _, t in pairs(self.Windows[windowTitle].Tabs) do
-            t.Visible = false
+    -- Tab button interaction
+    TabButton.MouseButton1Click:Connect(function()
+        for _, tab in pairs(window.Tabs) do
+            tab.Content.Visible = false
         end
-        tab.Visible = true
+        TabContent.Visible = true
     end)
 
-    AddToRegistry(tabButton, {BackgroundColor3 = "ButtonColor", TextColor3 = "TextColor"})
-    return tab
+    table.insert(window.Tabs, {Button = TabButton, Content = TabContent})
+
+    return TabContent
 end
 
--- Add a button
-function UILibrary:AddButton(tab, buttonText, callback)
-    local button = Instance.new("TextButton", tab)
-    button.Size = UDim2.new(0.9, 0, 0.1, 0)
-    button.Position = UDim2.new(0.05, 0, #tab:GetChildren() * 0.12, 0)
-    button.BackgroundColor3 = self.Theme.ButtonColor
-    button.TextColor3 = self.Theme.TextColor
-    button.Font = Enum.Font.SourceSans
-    button.Text = buttonText
-    button.TextSize = 16
+function UILibrary:AddToggle(parent, toggleName, defaultState, callback)
+    local Toggle = Instance.new("TextButton")
+    Toggle.Text = toggleName .. ": " .. (defaultState and "ON" or "OFF")
+    Toggle.Size = UDim2.new(0.9, 0, 0.1, 0)
+    Toggle.Position = UDim2.new(0.05, 0, #parent:GetChildren() * 0.12, 0)
+    Toggle.BackgroundColor3 = self.Theme.ButtonColor
+    Toggle.TextColor3 = self.Theme.TextColor
+    Toggle.Font = Enum.Font.SourceSans
+    Toggle.Parent = parent
 
-    button.MouseButton1Click:Connect(callback)
-    AddToRegistry(button, {BackgroundColor3 = "ButtonColor", TextColor3 = "TextColor"})
-    return button
-end
-
-function UILibrary:AddToggle(tab, toggleText, default, callback)
-    local toggle = Instance.new("TextButton", tab)
-    toggle.Size = UDim2.new(0.9, 0, 0.1, 0)
-    toggle.Position = UDim2.new(0.05, 0, #tab:GetChildren() * 0.12, 0)
-    toggle.BackgroundColor3 = self.Theme.ButtonColor
-    toggle.TextColor3 = self.Theme.TextColor
-    toggle.Font = Enum.Font.SourceSans
-    toggle.TextSize = 16
-    toggle.Text = toggleText .. ": " .. (default and "ON" or "OFF")
-
-    local state = default or false
-
-    toggle.MouseButton1Click:Connect(function()
+    local state = defaultState
+    Toggle.MouseButton1Click:Connect(function()
         state = not state
-        toggle.Text = toggleText .. ": " .. (state and "ON" or "OFF")
+        Toggle.Text = toggleName .. ": " .. (state and "ON" or "OFF")
         if callback then
             callback(state)
         end
     end)
 
-    AddToRegistry(toggle, {BackgroundColor3 = "ButtonColor", TextColor3 = "TextColor"})
-    return toggle
+    return Toggle
 end
 
-function UILibrary:AddSlider(tab, sliderText, min, max, default, callback)
-    local sliderFrame = Instance.new("Frame", tab)
-    sliderFrame.Size = UDim2.new(0.9, 0, 0.1, 0)
-    sliderFrame.Position = UDim2.new(0.05, 0, #tab:GetChildren() * 0.12, 0)
-    sliderFrame.BackgroundColor3 = self.Theme.BackgroundColor
+function UILibrary:AddDropdown(parent, dropdownName, options, callback)
+    local Dropdown = Instance.new("TextButton")
+    Dropdown.Text = dropdownName
+    Dropdown.Size = UDim2.new(0.9, 0, 0.1, 0)
+    Dropdown.Position = UDim2.new(0.05, 0, #parent:GetChildren() * 0.12, 0)
+    Dropdown.BackgroundColor3 = self.Theme.ButtonColor
+    Dropdown.TextColor3 = self.Theme.TextColor
+    Dropdown.Font = Enum.Font.SourceSans
+    Dropdown.Parent = parent
 
-    local sliderLabel = Instance.new("TextLabel", sliderFrame)
-    sliderLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    sliderLabel.TextColor3 = self.Theme.TextColor
-    sliderLabel.BackgroundTransparency = 1
-    sliderLabel.Text = sliderText .. ": " .. tostring(default)
-    sliderLabel.Font = Enum.Font.SourceSans
-    sliderLabel.TextSize = 14
+    local expanded = false
+    local OptionButtons = {}
 
-    local sliderBar = Instance.new("Frame", sliderFrame)
-    sliderBar.Size = UDim2.new(1, 0, 0.3, 0)
-    sliderBar.Position = UDim2.new(0, 0, 0.5, 0)
-    sliderBar.BackgroundColor3 = self.Theme.ButtonColor
-
-    local sliderKnob = Instance.new("TextButton", sliderBar)
-    sliderKnob.Size = UDim2.new(0, 10, 1, 0)
-    sliderKnob.Position = UDim2.new((default - min) / (max - min), 0, 0, 0)
-    sliderKnob.BackgroundColor3 = self.Theme.AccentColor
-    sliderKnob.Text = ""
-
-    local function updateSlider(input)
-        local x = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-        local value = math.floor(min + x * (max - min))
-        sliderLabel.Text = sliderText .. ": " .. tostring(value)
-        sliderKnob.Position = UDim2.new(x, 0, 0, 0)
-        if callback then
-            callback(value)
-        end
-    end
-
-    sliderKnob.MouseButton1Down:Connect(function()
-        local connection
-        connection = game:GetService("UserInputService").InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                updateSlider(input)
-            end
-        end)
-        game:GetService("UserInputService").InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                connection:Disconnect()
-            end
-        end)
-    end)
-
-    AddToRegistry(sliderFrame, {BackgroundColor3 = "BackgroundColor"})
-    AddToRegistry(sliderBar, {BackgroundColor3 = "ButtonColor"})
-    AddToRegistry(sliderKnob, {BackgroundColor3 = "AccentColor"})
-    AddToRegistry(sliderLabel, {TextColor3 = "TextColor"})
-    return sliderFrame
-end
-
-function UILibrary:AddTextBox(tab, textBoxText, callback)
-    local textBoxFrame = Instance.new("Frame", tab)
-    textBoxFrame.Size = UDim2.new(0.9, 0, 0.1, 0)
-    textBoxFrame.Position = UDim2.new(0.05, 0, #tab:GetChildren() * 0.12, 0)
-    textBoxFrame.BackgroundColor3 = self.Theme.ButtonColor
-
-    local textBoxLabel = Instance.new("TextLabel", textBoxFrame)
-    textBoxLabel.Size = UDim2.new(0.5, 0, 1, 0)
-    textBoxLabel.Text = textBoxText
-    textBoxLabel.TextColor3 = self.Theme.TextColor
-    textBoxLabel.BackgroundTransparency = 1
-    textBoxLabel.Font = Enum.Font.SourceSans
-    textBoxLabel.TextSize = 14
-
-    local textBoxInput = Instance.new("TextBox", textBoxFrame)
-    textBoxInput.Size = UDim2.new(0.5, 0, 1, 0)
-    textBoxInput.Position = UDim2.new(0.5, 0, 0, 0)
-    textBoxInput.BackgroundColor3 = self.Theme.BackgroundColor
-    textBoxInput.TextColor3 = self.Theme.TextColor
-    textBoxInput.Font = Enum.Font.SourceSans
-    textBoxInput.TextSize = 14
-    textBoxInput.PlaceholderText = "Enter text..."
-
-    textBoxInput.FocusLost:Connect(function(enterPressed)
-        if enterPressed and callback then
-            callback(textBoxInput.Text)
+    Dropdown.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        for _, button in pairs(OptionButtons) do
+            button.Visible = expanded
         end
     end)
 
-    AddToRegistry(textBoxFrame, {BackgroundColor3 = "ButtonColor"})
-    AddToRegistry(textBoxInput, {BackgroundColor3 = "BackgroundColor", TextColor3 = "TextColor"})
-    AddToRegistry(textBoxLabel, {TextColor3 = "TextColor"})
-    return textBoxFrame
-end
+    for i, option in pairs(options) do
+        local OptionButton = Instance.new("TextButton")
+        OptionButton.Text = option
+        OptionButton.Size = UDim2.new(0.9, 0, 0.1, 0)
+        OptionButton.Position = UDim2.new(0.05, 0, Dropdown.Position.Y.Scale + i * 0.12, 0)
+        OptionButton.BackgroundColor3 = self.Theme.ButtonColor
+        OptionButton.TextColor3 = self.Theme.TextColor
+        OptionButton.Font = Enum.Font.SourceSans
+        OptionButton.Parent = parent
+        OptionButton.Visible = false
 
-function UILibrary:AddDropdown(tab, dropdownText, options, callback)
-    local dropdownFrame = Instance.new("Frame", tab)
-    dropdownFrame.Size = UDim2.new(0.9, 0, 0.1, 0)
-    dropdownFrame.Position = UDim2.new(0.05, 0, #tab:GetChildren() * 0.12, 0)
-    dropdownFrame.BackgroundColor3 = self.Theme.ButtonColor
-
-    local dropdownLabel = Instance.new("TextLabel", dropdownFrame)
-    dropdownLabel.Size = UDim2.new(0.6, 0, 1, 0)
-    dropdownLabel.Text = dropdownText
-    dropdownLabel.TextColor3 = self.Theme.TextColor
-    dropdownLabel.BackgroundTransparency = 1
-    dropdownLabel.Font = Enum.Font.SourceSans
-    dropdownLabel.TextSize = 14
-
-    local dropdownButton = Instance.new("TextButton", dropdownFrame)
-    dropdownButton.Size = UDim2.new(0.4, 0, 1, 0)
-    dropdownButton.Position = UDim2.new(0.6, 0, 0, 0)
-    dropdownButton.Text = "Select"
-    dropdownButton.BackgroundColor3 = self.Theme.AccentColor
-    dropdownButton.TextColor3 = self.Theme.TextColor
-    dropdownButton.Font = Enum.Font.SourceSans
-    dropdownButton.TextSize = 14
-
-    local dropdownList = Instance.new("Frame", tab)
-    dropdownList.Size = UDim2.new(0.9, 0, 0.2 * #options, 0)
-    dropdownList.Position = UDim2.new(0.05, 0, dropdownFrame.Position.Y.Scale + 0.1, 0)
-    dropdownList.Visible = false
-    dropdownList.BackgroundColor3 = self.Theme.BackgroundColor
-
-    for i, option in ipairs(options) do
-        local optionButton = Instance.new("TextButton", dropdownList)
-        optionButton.Size = UDim2.new(1, 0, 1 / #options, 0)
-        optionButton.Position = UDim2.new(0, 0, (i - 1) / #options, 0)
-        optionButton.Text = option
-        optionButton.BackgroundColor3 = self.Theme.ButtonColor
-        optionButton.TextColor3 = self.Theme.TextColor
-        optionButton.Font = Enum.Font.SourceSans
-        optionButton.TextSize = 14
-
-        optionButton.MouseButton1Click:Connect(function()
-            dropdownButton.Text = option
-            dropdownList.Visible = false
+        OptionButton.MouseButton1Click:Connect(function()
+            Dropdown.Text = dropdownName .. ": " .. option
+            expanded = false
+            for _, button in pairs(OptionButtons) do
+                button.Visible = false
+            end
             if callback then
                 callback(option)
             end
         end)
 
-        AddToRegistry(optionButton, {BackgroundColor3 = "ButtonColor", TextColor3 = "TextColor"})
+        table.insert(OptionButtons, OptionButton)
     end
 
-    dropdownButton.MouseButton1Click:Connect(function()
-        dropdownList.Visible = not dropdownList.Visible
-    end)
-
-    AddToRegistry(dropdownFrame, {BackgroundColor3 = "ButtonColor"})
-    AddToRegistry(dropdownLabel, {TextColor3 = "TextColor"})
-    AddToRegistry(dropdownButton, {BackgroundColor3 = "AccentColor", TextColor3 = "TextColor"})
-    AddToRegistry(dropdownList, {BackgroundColor3 = "BackgroundColor"})
-    return dropdownFrame
+    return Dropdown
 end
 
-return UILibrary
+function UILibrary:AddKeybind(parent, keybindName, defaultKey, callback)
+    local Keybind = Instance.new("TextButton")
+    Keybind.Text = keybindName .. ": " .. defaultKey.Name
+    Keybind.Size = UDim2.new(0.9, 0, 0.1, 0)
+    Keybind.Position = UDim2.new(0.05, 0, #parent:GetChildren() * 0.12, 0)
+    Keybind.BackgroundColor3 = self.Theme.ButtonColor
+    Keybind.TextColor3 = self.Theme.TextColor
+    Keybind.Font = Enum.Font.SourceSans
+    Keybind.Parent = parent
+
+    local key = defaultKey
+
+    Keybind.MouseButton1Click:Connect(function()
+        Keybind.Text = keybindName .. ": Press a Key..."
+        local connection
+        connection = game:GetService("UserInputService").InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                key = input.KeyCode
+                Keybind.Text = keybindName .. ": " .. key.Name
+                connection:Disconnect()
+                if callback then
+                    callback(key)
+                end
+            end
+        end)
+    end)
+
+    return Keybind
+end
+
+function UILibrary:AddColorPicker(parent, colorPickerName, defaultColor, callback)
+    local ColorPickerButton = Instance.new("TextButton")
+    ColorPickerButton.Text = colorPickerName
+    ColorPickerButton.Size = UDim2.new(0.9, 0, 0.1, 0)
+    ColorPickerButton.Position = UDim2.new(0.05, 0, #parent:GetChildren() * 0.12, 0)
+    ColorPickerButton.BackgroundColor3 = defaultColor
+    ColorPickerButton.TextColor3 = self.Theme.TextColor
+    ColorPickerButton.Font = Enum.Font.SourceSans
+    ColorPickerButton.Parent = parent
+
+    local function OpenColorPicker()
+        local PickerFrame = Instance.new("Frame")
+        PickerFrame.Size = UDim2.new(0.4, 0, 0.4, 0)
+        PickerFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+        PickerFrame.BackgroundColor3 = self.Theme.BackgroundColor
+        PickerFrame.BorderSizePixel = 0
+        PickerFrame.Parent = parent
+
+        local ColorPicker = Instance.new("ImageButton")
+        ColorPicker.Image = "rbxassetid://6523286724" -- A color gradient asset
+        ColorPicker.Size = UDim2.new(0.8, 0, 0.8, 0)
+        ColorPicker.Position = UDim2.new(0.1, 0, 0.1, 0)
+        ColorPicker.BackgroundTransparency = 1
+        ColorPicker.Parent = PickerFrame
+
+        ColorPicker.MouseButton1Click:Connect(function()
+            local input = game:GetService("UserInputService").InputChanged:Wait()
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local mouseX, mouseY = game:GetService("UserInputService"):GetMouseLocation().X, game:GetService("UserInputService"):GetMouseLocation().Y
+                local relativeX = math.clamp((mouseX - ColorPicker.AbsolutePosition.X) / ColorPicker.AbsoluteSize.X, 0, 1)
+                local relativeY = math.clamp((mouseY - ColorPicker.AbsolutePosition.Y) / ColorPicker.AbsoluteSize.Y, 0, 1)
+                local selectedColor = Color3.fromHSV(relativeX, 1 - relativeY, 1)
+                ColorPickerButton.BackgroundColor3 = selectedColor
+                if callback then
+                    callback(selectedColor)
+                end
+                PickerFrame:Destroy()
+            end
+        end)
+    end
+
+    ColorPickerButton.MouseButton1Click:Connect(OpenColorPicker)
+
+    return ColorPickerButton
+end
+
+function UILibrary:AddConsole(parent, consoleName, options)
+    local ConsoleFrame = Instance.new("Frame")
+    ConsoleFrame.Size = UDim2.new(0.9, 0, options.y or 0.3, 0)
+    ConsoleFrame.Position = UDim2.new(0.05, 0, #parent:GetChildren() * 0.12, 0)
+    ConsoleFrame.BackgroundColor3 = self.Theme.ButtonColor
+    ConsoleFrame.BorderSizePixel = 0
+    ConsoleFrame.Parent = parent
+
+    local TextBox = Instance.new("TextBox")
+    TextBox.Size = UDim2.new(1, -10, 1, -10)
+    TextBox.Position = UDim2.new(0, 5, 0, 5)
+    TextBox.BackgroundTransparency = options.readonly and 1 or 0
+    TextBox.TextColor3 = self.Theme.TextColor
+    TextBox.Font = Enum.Font.Code
+    TextBox.TextXAlignment = Enum.TextXAlignment.Left
+    TextBox.TextYAlignment = Enum.TextYAlignment.Top
+    TextBox.ClearTextOnFocus = false
+    TextBox.MultiLine = true
+    TextBox.Text = ""
+    TextBox.TextScaled = false
+    TextBox.Parent = ConsoleFrame
+
+    local function Log(message)
+        TextBox.Text = TextBox.Text .. "\n" .. message
+        TextBox.CursorPosition = #TextBox.Text
+    end
+
+    local function Set(text)
+        TextBox.Text = text
+    end
+
+    local function Get()
+        return TextBox.Text
+    end
+
+    return {
+        Log = Log,
+        Set = Set,
+        Get = Get
+    }
+
+end
+function UILibrary:FormatWindows()
+    local xOffset = 0
+    for _, tab in ipairs(self.Elements.Tabs) do
+        tab.Button.Position = UDim2.new(0, xOffset, 0, 0)
+        xOffset = xOffset + tab.Button.Size.X.Offset + 10
+    end
+end
+
+function UILibrary:Unload()
+    if self.Elements.Window then
+        self.Elements.Window:Destroy()
+    end
+end
