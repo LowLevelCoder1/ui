@@ -385,20 +385,24 @@ function UILibrary:AddTheme(name, themeColors)
 end
 
 -- Function: Apply Theme
-function UILibrary:ApplyTheme(name)
-    if not self.Themes or not self.Themes[name] then return end
-    local theme = self.Themes[name]
+function SexyUILibrary:ApplyTheme(theme)
+    if type(theme) ~= "table" then
+        warn("ApplyTheme: Theme must be a table!")
+        return
+    end
 
-    self.Theme.BackgroundColor = theme.BackgroundColor or self.Theme.BackgroundColor
-    self.Theme.TextColor = theme.TextColor or self.Theme.TextColor
-    self.Theme.AccentColor = theme.AccentColor or self.Theme.AccentColor
-    self.Theme.ButtonColor = theme.ButtonColor or self.Theme.ButtonColor
+    for property, value in pairs(theme) do
+        if self.Theme[property] ~= nil then
+            self.Theme[property] = value
+        else
+            warn("Invalid theme property:", property)
+        end
+    end
 
-    -- Update UI elements
-    for _, element in pairs(self.ElementsRegistry or {}) do
-        if element:IsA("Frame") or element:IsA("TextLabel") or element:IsA("TextButton") then
-            element.BackgroundColor3 = self.Theme.BackgroundColor
-            element.TextColor3 = self.Theme.TextColor
+    -- Update existing UI elements with the new theme
+    for _, element in pairs(self.Elements) do
+        if element.UpdateTheme then
+            element:UpdateTheme(self.Theme)
         end
     end
 end
