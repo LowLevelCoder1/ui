@@ -1,210 +1,165 @@
-local library = {}
+local UILibrary = {}
 
-local ui_options = {
-    main_color = Color3.fromRGB(0, 162, 255),
-    background_color = Color3.fromRGB(30, 30, 30),
-    text_color = Color3.fromRGB(255, 255, 255),
-    toggle_key = Enum.KeyCode.RightShift
+-- Main table to store UI elements and theme settings
+UILibrary.Elements = {}
+UILibrary.Theme = {
+    BackgroundColor = Color3.fromRGB(40, 40, 40),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    AccentColor = Color3.fromRGB(0, 120, 255),
+    ButtonColor = Color3.fromRGB(60, 60, 60)
 }
 
-local function create_instance(class, properties)
-    local object = Instance.new(class)
-    for property, value in pairs(properties) do
-        object[property] = value
-    end
-    return object
+-- Function to create a new UI window
+function UILibrary:CreateWindow(title)
+    local window = Instance.new("ScreenGui")
+    window.Name = title or "UIWindow"
+    window.Parent = game:GetService("CoreGui")
+
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0.4, 0, 0.5, 0)
+    mainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
+    mainFrame.BackgroundColor3 = self.Theme.BackgroundColor
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = window
+
+    -- Title Bar
+    local titleBar = Instance.new("TextLabel")
+    titleBar.Text = title or "UI Window"
+    titleBar.Size = UDim2.new(1, 0, 0.1, 0)
+    titleBar.BackgroundColor3 = self.Theme.AccentColor
+    titleBar.TextColor3 = self.Theme.TextColor
+    titleBar.Font = Enum.Font.SourceSansBold
+    titleBar.TextScaled = true
+    titleBar.Parent = mainFrame
+
+    -- Return window structure
+    self.Elements.Window = window
+    self.Elements.MainFrame = mainFrame
+    self.Elements.Tabs = {}
+
+    return self
 end
 
-function library:AddWindow(title)
-    local window = {}
-    local gui = create_instance("ScreenGui", {Parent = game:GetService("CoreGui")})
-    local frame = create_instance("Frame", {
-        Parent = gui,
-        Size = UDim2.new(0, 400, 0, 300),
-        BackgroundColor3 = ui_options.background_color,
-        BorderSizePixel = 0,
-        Draggable = true,
-        Active = true,
-        Position = UDim2.new(0.5, -200, 0.5, -150)
-    })
-    create_instance("UICorner", {Parent = frame})
+-- Function to add a tab
+function UILibrary:AddTab(tabName)
+    local tabButton = Instance.new("TextButton")
+    tabButton.Text = tabName
+    tabButton.Size = UDim2.new(0.2, 0, 0.1, 0)
+    tabButton.Position = UDim2.new(#self.Elements.Tabs * 0.2, 0, 0, 0)
+    tabButton.BackgroundColor3 = self.Theme.ButtonColor
+    tabButton.TextColor3 = self.Theme.TextColor
+    tabButton.Font = Enum.Font.SourceSansBold
+    tabButton.Parent = self.Elements.MainFrame
 
-    local title_bar = create_instance("Frame", {
-        Parent = frame,
-        Size = UDim2.new(1, 0, 0, 30),
-        BackgroundColor3 = ui_options.main_color,
-        BorderSizePixel = 0
-    })
-    create_instance("UICorner", {Parent = title_bar})
+    local tabContent = Instance.new("Frame")
+    tabContent.Size = UDim2.new(1, 0, 0.9, 0)
+    tabContent.Position = UDim2.new(0, 0, 0.1, 0)
+    tabContent.BackgroundTransparency = 1
+    tabContent.Visible = #self.Elements.Tabs == 0
+    tabContent.Parent = self.Elements.MainFrame
 
-    create_instance("TextLabel", {
-        Parent = title_bar,
-        Size = UDim2.new(1, 0, 1, 0),
-        Text = title or "Window",
-        TextColor3 = ui_options.text_color,
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
-        TextSize = 16
-    })
-
-    local container = create_instance("ScrollingFrame", {
-        Parent = frame,
-        Size = UDim2.new(1, 0, 1, -30),
-        Position = UDim2.new(0, 0, 0, 30),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarImageColor3 = ui_options.text_color
-    })
-
-    create_instance("UIListLayout", {Parent = container, Padding = UDim.new(0, 5)})
-
-    function window:AddTab(title)
-        local tab = {}
-        local tab_button = create_instance("TextButton", {
-            Parent = container,
-            Text = title or "Tab",
-            BackgroundColor3 = ui_options.background_color,
-            TextColor3 = ui_options.text_color,
-            Size = UDim2.new(1, -10, 0, 30),
-            Font = Enum.Font.Gotham,
-            TextSize = 14,
-            BorderSizePixel = 0
-        })
-        create_instance("UICorner", {Parent = tab_button})
-
-        local tab_container = create_instance("Frame", {
-            Parent = container,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 200)
-        })
-        create_instance("UIListLayout", {Parent = tab_container, Padding = UDim.new(0, 5)})
-
-        function tab:AddButton(title, callback)
-            local button = create_instance("TextButton", {
-                Parent = tab_container,
-                Text = title or "Button",
-                BackgroundColor3 = ui_options.background_color,
-                TextColor3 = ui_options.text_color,
-                Size = UDim2.new(1, -10, 0, 30),
-                Font = Enum.Font.Gotham,
-                TextSize = 14,
-                BorderSizePixel = 0
-            })
-            create_instance("UICorner", {Parent = button})
-            button.MouseButton1Click:Connect(callback)
+    -- Toggle visibility on click
+    tabButton.MouseButton1Click:Connect(function()
+        for _, tab in pairs(self.Elements.Tabs) do
+            tab.Content.Visible = false
         end
+        tabContent.Visible = true
+    end)
 
-        function tab:AddSwitch(title, callback)
-            local switch = {}
-            local button = create_instance("TextButton", {
-                Parent = tab_container,
-                Text = title or "Switch",
-                BackgroundColor3 = ui_options.background_color,
-                TextColor3 = ui_options.text_color,
-                Size = UDim2.new(1, -10, 0, 30),
-                Font = Enum.Font.Gotham,
-                TextSize = 14,
-                BorderSizePixel = 0
-            })
-            create_instance("UICorner", {Parent = button})
-
-            local toggled = false
-
-            function switch:Set(state)
-                toggled = state
-                button.Text = title .. (toggled and " [ON]" or " [OFF]")
-                callback(toggled)
-            end
-
-            button.MouseButton1Click:Connect(function()
-                switch:Set(not toggled)
-            end)
-
-            return switch
-        end
-
-        function tab:AddSlider(title, callback, options)
-            local slider = {}
-            options = options or {min = 0, max = 100}
-            local value = options.min
-
-            local frame = create_instance("Frame", {
-                Parent = tab_container,
-                BackgroundColor3 = ui_options.background_color,
-                Size = UDim2.new(1, -10, 0, 50),
-                BorderSizePixel = 0
-            })
-            create_instance("UICorner", {Parent = frame})
-
-            local label = create_instance("TextLabel", {
-                Parent = frame,
-                Text = title or "Slider",
-                BackgroundTransparency = 1,
-                TextColor3 = ui_options.text_color,
-                Size = UDim2.new(1, 0, 0, 20),
-                Font = Enum.Font.Gotham,
-                TextSize = 14
-            })
-
-            local slider_bar = create_instance("Frame", {
-                Parent = frame,
-                Size = UDim2.new(1, -20, 0, 10),
-                Position = UDim2.new(0, 10, 0, 30),
-                BackgroundColor3 = ui_options.main_color,
-                BorderSizePixel = 0
-            })
-            create_instance("UICorner", {Parent = slider_bar})
-
-            local slider_knob = create_instance("Frame", {
-                Parent = slider_bar,
-                Size = UDim2.new(0, 10, 0, 10),
-                BackgroundColor3 = ui_options.text_color,
-                BorderSizePixel = 0
-            })
-            create_instance("UICorner", {Parent = slider_knob})
-
-            local function update_slider(input_position)
-                local scale = math.clamp((input_position.X - slider_bar.AbsolutePosition.X) / slider_bar.AbsoluteSize.X, 0, 1)
-                slider_knob.Position = UDim2.new(scale, -5, 0, 0)
-                value = math.floor(options.min + scale * (options.max - options.min))
-                label.Text = title .. ": " .. value
-                callback(value)
-            end
-
-            slider_bar.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    update_slider(input.Position)
-                    local move_connection
-                    move_connection = game:GetService("UserInputService").InputChanged:Connect(function(movement)
-                        if movement.UserInputType == Enum.UserInputType.MouseMovement then
-                            update_slider(movement.Position)
-                        end
-                    end)
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            move_connection:Disconnect()
-                        end
-                    end)
-                end
-            end)
-
-            function slider:Set(new_value)
-                value = math.clamp(new_value, options.min, options.max)
-                local scale = (value - options.min) / (options.max - options.min)
-                slider_knob.Position = UDim2.new(scale, -5, 0, 0)
-                label.Text = title .. ": " .. value
-                callback(value)
-            end
-
-            slider:Set(options.min)
-            return slider
-        end
-
-        return tab
-    end
-
-    return window
+    table.insert(self.Elements.Tabs, {Button = tabButton, Content = tabContent})
+    return tabContent
 end
 
-return library
+-- Function to add a button
+function UILibrary:AddButton(parent, buttonName, callback)
+    local button = Instance.new("TextButton")
+    button.Text = buttonName
+    button.Size = UDim2.new(0.8, 0, 0.1, 0)
+    button.Position = UDim2.new(0.1, 0, #parent:GetChildren() * 0.12, 0)
+    button.BackgroundColor3 = self.Theme.ButtonColor
+    button.TextColor3 = self.Theme.TextColor
+    button.Font = Enum.Font.SourceSans
+    button.Parent = parent
+
+    button.MouseButton1Click:Connect(function()
+        if callback then
+            callback()
+        end
+    end)
+
+    return button
+end
+
+-- Function to add a toggle
+function UILibrary:AddToggle(parent, toggleName, default, callback)
+    local toggle = Instance.new("TextButton")
+    toggle.Text = toggleName .. ": " .. (default and "ON" or "OFF")
+    toggle.Size = UDim2.new(0.8, 0, 0.1, 0)
+    toggle.Position = UDim2.new(0.1, 0, #parent:GetChildren() * 0.12, 0)
+    toggle.BackgroundColor3 = self.Theme.ButtonColor
+    toggle.TextColor3 = self.Theme.TextColor
+    toggle.Font = Enum.Font.SourceSans
+    toggle.Parent = parent
+
+    local state = default
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        toggle.Text = toggleName .. ": " .. (state and "ON" or "OFF")
+        if callback then
+            callback(state)
+        end
+    end)
+
+    return toggle
+end
+
+-- Function to add a dropdown
+function UILibrary:AddDropdown(parent, dropdownName, options, callback)
+    local dropdown = Instance.new("TextButton")
+    dropdown.Text = dropdownName
+    dropdown.Size = UDim2.new(0.8, 0, 0.1, 0)
+    dropdown.Position = UDim2.new(0.1, 0, #parent:GetChildren() * 0.12, 0)
+    dropdown.BackgroundColor3 = self.Theme.ButtonColor
+    dropdown.TextColor3 = self.Theme.TextColor
+    dropdown.Font = Enum.Font.SourceSans
+    dropdown.Parent = parent
+
+    local expanded = false
+    local optionButtons = {}
+
+    dropdown.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        for _, button in pairs(optionButtons) do
+            button.Visible = expanded
+        end
+    end)
+
+    for i, option in pairs(options) do
+        local optionButton = Instance.new("TextButton")
+        optionButton.Text = option
+        optionButton.Size = UDim2.new(0.8, 0, 0.1, 0)
+        optionButton.Position = UDim2.new(0.1, 0, dropdown.Position.Y.Scale + i * 0.12, 0)
+        optionButton.BackgroundColor3 = self.Theme.ButtonColor
+        optionButton.TextColor3 = self.Theme.TextColor
+        optionButton.Font = Enum.Font.SourceSans
+        optionButton.Parent = parent
+        optionButton.Visible = false
+
+        optionButton.MouseButton1Click:Connect(function()
+            dropdown.Text = dropdownName .. ": " .. option
+            expanded = false
+            for _, button in pairs(optionButtons) do
+                button.Visible = false
+            end
+            if callback then
+                callback(option)
+            end
+        end)
+
+        table.insert(optionButtons, optionButton)
+    end
+
+    return dropdown
+end
+
+return UILibrary
